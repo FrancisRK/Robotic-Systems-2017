@@ -4,6 +4,7 @@ function [botSim] = localise(botSim,map,target)
 
 %% setup code
 %you can modify the map to take account of your robots configuration space
+map=[0,0;60,0;60,45;45,45;45,59;106,59;106,105;0,105];  %default map
 modifiedMap = map; %you need to do this modification yourself
 botSim.setMap(modifiedMap);
 
@@ -12,7 +13,8 @@ num =300; % number of particles
 particles(num,1) = BotSim; %how to set up a vector of objects
 for i = 1:num
     particles(i) = BotSim(modifiedMap);  %each particle should use the same map as the botSim object
-    particles(i).randomPose(0); %spawn the particles in random locations
+    particles(i).randomPose(5); %spawn the particles in random locations
+    particles(i).drawBot(3);
 end
 
 %% Localisation code

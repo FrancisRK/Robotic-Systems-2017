@@ -15,5 +15,16 @@ botSim.setTurningNoise(_)
 
 Example 2 - Scanning
 
-botSim.ultraScan()
+botSim.ultraScan() --> [distance crossingPoint]
 botSim.drawScanConfig()
+botSim.setScanConfig(botSim.generateScanConfig(_))
+botSim.setSensorNoise(_)
+
+Example 3 - InsideMap
+
+botSim.pointInsideMap([_ _; _ _; ... ; _ _])
+
+Example 4 - Particles
+
+botSim.randomPose(_)
+botSim.getRndPtInMap(_)
