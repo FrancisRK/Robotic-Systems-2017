@@ -1,0 +1,19 @@
+Example 1 - Movement
+
+BotSim(map)
+botSim.drawMap()
+botSim.drawBot(3)
+botSim.setBotPos([_,_])
+botSim.setBotAng(_)
+botSim.getBotPos()
+botSim.getBotAng()
+botSim.turn(_)
+botSim.move(_)
+botSim.insideMap() --> [0,1]
+botSim.setMotionNoise(_)
+botSim.setTurningNoise(_)
+
+Example 2 - Scanning
+
+botSim.ultraScan()
+botSim.drawScanConfig()
