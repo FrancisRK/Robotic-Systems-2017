@@ -4,7 +4,7 @@ function [botSim] = localise(botSim,map,target)
 
 %% setup code
 %you can modify the map to take account of your robots configuration space
-map=[0,0;60,0;60,45;45,45;45,59;106,59;106,105;0,105];  %default map
+map = [0,0;60,0;60,45;45,45;45,59;106,59;106,105;0,105];  %default map
 modifiedMap = map; %you need to do this modification yourself
 botSim.setMap(modifiedMap);
 
@@ -30,26 +30,19 @@ n = 0;
 converged = 0; %The filter has not converged yet
 while(converged == 0 && n < maxNumOfIterations) %%particle filter loop
     n = n+1; %increment the current number of iterations
-    botScan = botSim.ultraScan(); %get a scan from the real robot.
+    [distances crossingPoints] = botSim.ultraScan(); %get a scan from the real robot.
     
     botSim.drawScanConfig(); %draws current scan configuration
     botSim.drawBot(3);
-    scatter(crossingPoint(:,1),crossingPoint(:,2),'marker','o','lineWidth',3); %draws crossingpoints
+    scatter(crossingPoints(:,1),crossingPoints(:,2),'marker','o','lineWidth',3); %draws crossingpoints
     %% Write code for updating your particles scans
     
-    for i =1:num
-        [distances crossingPoints] = particles(i).ultraScan();
-    end
-    
-    botSim.drawMap();
-    for i =1:num    
-        if particles(i).insideMap() == 0
-            particles(i).randomPose(0); %at least 5cm from the wall
-        end
-        particles(i).drawBot(3);
+    for i = 1:num
+        particleScans(i,:,:) = particles(i).ultraScan();
     end
     
     %% Write code for scoring your particles    
+    
     
     
     %% Write code for resampling your particles
