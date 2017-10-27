@@ -8,12 +8,6 @@ map=[0,0;60,0;60,45;45,45;45,59;106,59;106,105;0,105];  %default map
 modifiedMap = map; %you need to do this modification yourself
 botSim.setMap(modifiedMap);
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-botSim = BotSim(map);  %sets up a botSim object a map, and debug mode on.
-botSim.drawMap();
-botSim.drawBot(5);
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 %generate some random particles inside the map
 num =300; % number of particles
 particles(num,1) = BotSim; %how to set up a vector of objects
@@ -23,7 +17,6 @@ for i = 1:num
     particles(i).drawBot(3);
 end
 
-botSim.drawMap();
 %% Localisation code
 maxNumOfIterations = 30;
 n = 0;
@@ -32,13 +25,10 @@ while(converged == 0 && n < maxNumOfIterations) %%particle filter loop
     n = n+1; %increment the current number of iterations
     botScan = botSim.ultraScan(); %get a scan from the real robot.
     
-    botSim.drawScanConfig(); %draws current scan configuration
-    botSim.drawBot(3);
-    scatter(crossingPoint(:,1),crossingPoint(:,2),'marker','o','lineWidth',3); %draws crossingpoints
     %% Write code for updating your particles scans
     
     for i =1:num
-        [distances crossingPoints] = particles(i).ultraScan();
+        particles(i).ultraScan();
     end
     
     botSim.drawMap();
