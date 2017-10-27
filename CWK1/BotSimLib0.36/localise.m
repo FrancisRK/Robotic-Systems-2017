@@ -11,9 +11,27 @@ botSim.setMap(modifiedMap);
 
 %%% Assuming all maps have limsMin = [0 0] -- Could possibly change
 limsMax = max(map); % maximum limits of the map
+dims = limsMax; %dimension of the map
+res = 2; %sampling resouloution in cm
+iterators = dims/res;
+iterators = ceil(iterators)+[1 1]; %to counteract 1 based indexing
+gridPoints = limsMax + [1,1];
+mapMatrix = zeros(gridPoints);
+for i = 1:gridPoints(2)
+    for j = 1:gridPoints(1)
+        testPos = [j-1 i-1]*res; %to counteract 1 based indexing
+        %notice, that i and j have also been swapped here so that the only
+        %thing left to do is invert the y axis. 
+        mapMatrix(i,j) = botSim.pointInsideMap(testPos);
+        if mapMatrix(i,j)
+            plot(testPos(1),testPos(2),'*');%inside map
+        else
+            plot(testPos(1),testPos(2),'o');%outside map
+        end
+    end
+end
 
-mapMatrix = zeros(limsMax + [1,1]);
-
+flipud(mapMatrix);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %botSim = BotSim(map);  %sets up a botSim object a map, and debug mode on.
@@ -25,7 +43,6 @@ particles(num,1) = BotSim; %how to set up a vector of objects
 for i = 1:num
     particles(i) = BotSim(modifiedMap);  %each particle should use the same map as the botSim object
     particles(i).randomPose(5); %spawn the particles in random locations
-    if particles(i).
     particles(i).drawBot(3);
 end
 
