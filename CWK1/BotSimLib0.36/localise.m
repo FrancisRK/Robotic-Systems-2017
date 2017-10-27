@@ -26,7 +26,20 @@ while(converged == 0 && n < maxNumOfIterations) %%particle filter loop
     botScan = botSim.ultraScan(); %get a scan from the real robot.
     
     %% Write code for updating your particles scans
-   
+    
+    for i =1:num
+        particles(i).turn(0.1);
+        particles(i).move(20);
+        particles(i).drawBot(3);
+    end
+    
+    botSim.drawMap();
+    for i =1:num    
+        if particles(i).insideMap() == 0
+            particles(i).randomPose(0); %at least 5cm from the wall
+        end
+        particles(i).drawBot(3);
+    end
     
     %% Write code for scoring your particles    
     
