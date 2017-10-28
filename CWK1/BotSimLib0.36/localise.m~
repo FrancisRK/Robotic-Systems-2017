@@ -38,7 +38,7 @@ flipud(mapMatrix)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %generate some random particles inside the map
-num = 300; % number of particles
+num =300; % number of particles
 particles(num,1) = BotSim; %how to set up a vector of objects
 for i = 1:num
     particles(i) = BotSim(modifiedMap);  %each particle should use the same map as the botSim object
@@ -57,6 +57,9 @@ while(converged == 0 && n < maxNumOfIterations) %%particle filter loop
     
     distances
     crossingPoints
+    
+    scatter(crossingPoints(:,1),crossingPoints(:,2),'marker','o','lineWidth',3); %draws crossingpoints
+    botSim.drawScanConfig(); %draws current scan configuration
     
     %% Write code for updating your particles scans
     
@@ -81,7 +84,7 @@ while(converged == 0 && n < maxNumOfIterations) %%particle filter loop
     %% Write code to decide how to move next
     % here they just turn in cicles as an example
     turn = 0.5;
-    move = 1;
+    move = 0;
     botSim.turn(turn); %turn the real robot.  
     botSim.move(move); %move the real robot. These movements are recorded for marking 
     for i =1:num %for all the particles. 
@@ -96,7 +99,6 @@ while(converged == 0 && n < maxNumOfIterations) %%particle filter loop
         botSim.drawMap(); %drawMap() turns hold back on again, so you can draw the bots
         botSim.drawBot(30,'g'); %draw robot with line length 30 and green
         botSim.drawScanConfig(); %draws current scan configuration
-        [distances, crossingPoints] = botSim.ultraScan(); %get a scan from the real robot.
         scatter(crossingPoints(:,1),crossingPoints(:,2),'marker','o','lineWidth',3); %draws crossingpoints
         for i =1:num
             particles(i).drawBot(3); %draw particle with line length 3 and default color
