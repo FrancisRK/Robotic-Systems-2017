@@ -8,17 +8,41 @@ map = [0,0;60,0;60,45;45,45;45,59;106,59;106,105;0,105];  %default map
 modifiedMap = map; %you need to do this modification yourself
 botSim.setMap(modifiedMap);
 
+
+%%% Assuming all maps have limsMin = [0 0] -- Could possibly change
+limsMax = max(map); % maximum limits of the map
+dims = limsMax; %dimension of the map
+res = 10; %sampling resouloution in cm
+iterators = dims/res;
+iterators = ceil(iterators)+[1 1]; %to counteract 1 based indexing
+gridPoints = iterators + [1,1];
+mapMatrix = zeros(gridPoints);
+for i = 1:gridPoints(2)
+    for j = 1:gridPoints(1)
+        testPos = [j-1 i-1]*res; %to counteract 1 based indexing
+        %notice, that i and j have also been swapped here so that the only
+        %thing left to do is invert the y axis. 
+        mapMatrix(i,j) = botSim.pointInsideMap(testPos);
+        if mapMatrix(i,j)
+            plot(testPos(1),testPos(2),'*');%inside map
+        else
+            plot(testPos(1),testPos(2),'o');%outside map
+        end
+    end
+end
+
+mapGrid = flipud(mapMatrix)
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %botSim = BotSim(map);  %sets up a botSim object a map, and debug mode on.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %generate some random particles inside the map
-num =300; % number of particles
+num = 300; % number of particles
 particles(num,1) = BotSim; %how to set up a vector of objects
 for i = 1:num
     particles(i) = BotSim(modifiedMap);  %each particle should use the same map as the botSim object
     particles(i).randomPose(5); %spawn the particles in random locations
-    
     particles(i).drawBot(3);
 end
 
@@ -34,14 +58,20 @@ while(converged == 0 && n < maxNumOfIterations) %%particle filter loop
     distances
     crossingPoints
     
-    botSim.drawScanConfig(); %draws current scan configuration
-    botSim.drawBot(3);
-    %scatter(crossingPoints(:,1),crossingPoints(:,2),'marker','o','lineWidth',3); %draws crossingpoints
     %% Write code for updating your particles scans
     
     for i = 1:num
-        particleScans(i,:,:) = particles(i).ultraScan();
+        particleScans([]) = particles(i).ultraScan();
     end
+    
+     n = 10 ;
+    M = cell(n, 1) ;
+    for k = 1 : n
+    M{k} = 20*k + rand(10) ;
+ end
+    
+    particles(1)
+    particleScans(1,:,:)
     
     %% Write code for scoring your particles    
     
@@ -60,7 +90,7 @@ while(converged == 0 && n < maxNumOfIterations) %%particle filter loop
     %% Write code to decide how to move next
     % here they just turn in cicles as an example
     turn = 0.5;
-    move = 0;
+    move = 1;
     botSim.turn(turn); %turn the real robot.  
     botSim.move(move); %move the real robot. These movements are recorded for marking 
     for i =1:num %for all the particles. 
@@ -75,6 +105,7 @@ while(converged == 0 && n < maxNumOfIterations) %%particle filter loop
         botSim.drawMap(); %drawMap() turns hold back on again, so you can draw the bots
         botSim.drawBot(30,'g'); %draw robot with line length 30 and green
         botSim.drawScanConfig(); %draws current scan configuration
+        [distances, crossingPoints] = botSim.ultraScan(); %get a scan from the real robot.
         scatter(crossingPoints(:,1),crossingPoints(:,2),'marker','o','lineWidth',3); %draws crossingpoints
         for i =1:num
             particles(i).drawBot(3); %draw particle with line length 3 and default color

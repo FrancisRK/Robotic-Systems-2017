@@ -31,7 +31,7 @@ for i = 1:gridPoints(2)
     end
 end
 
-flipud(mapMatrix)
+mapGrid = flipud(mapMatrix)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %botSim = BotSim(map);  %sets up a botSim object a map, and debug mode on.
@@ -55,14 +55,17 @@ while(converged == 0 && n < maxNumOfIterations) %%particle filter loop
     n = n+1; %increment the current number of iterations
     [distances, crossingPoints] = botSim.ultraScan(); %get a scan from the real robot.
     
-    distances
-    crossingPoints
+    %distances
+    %crossingPoints
     
     %% Write code for updating your particles scans
     
+    particleScans = cell(num, 1); %Creates a cell matrix to contain each particle's scans
     for i = 1:num
-        particleScans(i,:,:) = particles(i).ultraScan();
+        particleScans{i} = particles(i).ultraScan();
     end
+    
+    particleScans{1}
     
     %% Write code for scoring your particles    
     
