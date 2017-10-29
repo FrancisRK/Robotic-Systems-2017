@@ -53,23 +53,28 @@ n = 0;
 converged = 0; %The filter has not converged yet
 while(converged == 0 && n < maxNumOfIterations) %%particle filter loop
     n = n+1; %increment the current number of iterations
-    [distances, crossingPoints] = botSim.ultraScan(); %get a scan from the real robot.
+    botScan = botSim.ultraScan(); %get a scan from the real robot.
     
     %distances
     %crossingPoints
     
     %% Write code for updating your particles scans
     
-    particleScans = cell(num, 1); %Creates a cell matrix to contain each particle's scans
+    %particleScans = cell(num, 1); %Creates a cell matrix to contain each particle's scans
     for i = 1:num
-        particleScans{i} = particles(i).ultraScan();
-    end
-    
-    particleScans{1}
+        particleScans(i,:) = particles(i).ultraScan();
+    end    
     
     %% Write code for scoring your particles    
     
+    for i = 1:num
+        particleDiff(i,:) = abs(botScan - particleScans(i,:)); %Calculates the absolute difference between particle and bot scans
+        averageParticleDiff(i,:) = sum(particleDiff(i,:)); %Average difference between scans of bot and particle
+    end
     
+    for i = 1:num
+        particleProb(i,:) = 1 - (averageParticleDiff(i,:)/sum(averageParticleDiff));
+    end
     
     %% Write code for resampling your particles
     
