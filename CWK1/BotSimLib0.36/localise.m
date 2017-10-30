@@ -38,7 +38,7 @@ mapGrid = flipud(mapMatrix);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %generate some random particles inside the map
-num = 10; % number of particles
+num = 300; % number of particles
 particles(num,1) = BotSim; %how to set up a vector of objects
 for i = 1:num
     particles(i) = BotSim(modifiedMap);  %each particle should use the same map as the botSim object
@@ -80,11 +80,11 @@ while(converged == 0 && n < maxNumOfIterations) %%particle filter loop
     sigma = 1;
     
     for i = 1:num
-        particleProb(i,:) = 1 - (averageParticleDiff(i,:)/sum(averageParticleDiff));
-        particleWeight(i,:) = (1/sqrt(2*pi*sigma))*exp(-((particleProb(i,:)^2)/2*sigma^2));
+        %particleProb(i,:) = 1 - (averageParticleDiff(i,:)/sum(averageParticleDiff));
+        particleWeight(i,:) = (1/sqrt(2*pi*sigma))*exp(-((averageParticleDiff(i,:)^2)/2*sigma^2));
     end
     
-    pProb = particleProb(:,:)
+    %pProb = particleProb(:,:)
     pWeight = particleWeight(1,:)
     
     normalWeight = zeros(num, 1);
@@ -100,7 +100,7 @@ while(converged == 0 && n < maxNumOfIterations) %%particle filter loop
     
     %% Write code for resampling your particles
     
-    %if particles(i)
+    
     
     %% Write code to check for convergence   
 	
@@ -111,10 +111,10 @@ while(converged == 0 && n < maxNumOfIterations) %%particle filter loop
     %% Write code to decide how to move next
     % here they just turn in cicles as an example
     turn = 0.5;
-    move = 5;
+    move = 2;
     botSim.turn(turn); %turn the real robot.  
     botSim.move(move); %move the real robot. These movements are recorded for marking 
-    for i =1:num %for all the particles. 
+    for i = 1:num %for all the particles. 
         particles(i).turn(turn); %turn the particle in the same way as the real robot
         particles(i).move(move); %move the particle in the same way as the real robot
     end
