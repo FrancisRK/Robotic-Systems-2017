@@ -8,10 +8,10 @@ map = [0,0;60,0;60,45;45,45;45,59;106,59;106,105;0,105];  %default map
 modifiedMap = map; %you need to do this modification yourself
 botSim.setMap(modifiedMap);
 
-
 %%% Assuming all maps have limsMin = [0 0] -- Could possibly change
+limsMin = min(map); % minimum limits of the map
 limsMax = max(map); % maximum limits of the map
-dims = limsMax; %dimension of the map
+dims = limsMax-limsMin; %dimension of the map
 res = 10; %sampling resouloution in cm
 iterators = dims/res;
 iterators = ceil(iterators)+[1 1]; %to counteract 1 based indexing
@@ -19,7 +19,7 @@ gridPoints = iterators + [1,1];
 mapMatrix = zeros(gridPoints);
 for i = 1:gridPoints(2)
     for j = 1:gridPoints(1)
-        testPos = [j-1 i-1]*res; %to counteract 1 based indexing
+        testPos = limsMin + [j-1 i-1]*res; %to counteract 1 based indexing
         %notice, that i and j have also been swapped here so that the only
         %thing left to do is invert the y axis. 
         mapMatrix(i,j) = botSim.pointInsideMap(testPos);
@@ -38,7 +38,7 @@ mapGrid = flipud(mapMatrix);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %generate some random particles inside the map
-num = 300; % number of particles
+num = 5; % number of particles
 particles(num,1) = BotSim; %how to set up a vector of objects
 for i = 1:num
     particles(i) = BotSim(modifiedMap);  %each particle should use the same map as the botSim object
@@ -71,22 +71,13 @@ while(converged == 0 && n < maxNumOfIterations) %%particle filter loop
         particleDiff(i,:) = abs(botScan - particleScans(i,:)); %Calculates the absolute difference between particle and bot scans
         averageParticleDiff(i,:) = sum(particleDiff(i,:))/6; %Average difference between scans of bot and particle
     end
-    
-    pDiff = particleDiff(1,:)
-    apDiff = averageParticleDiff(1,:)
         
-    particleProb = zeros(num, 1);
     particleWeight = zeros(num, 1);
     sigma = 1;
-    
     for i = 1:num
-        %particleProb(i,:) = 1 - (averageParticleDiff(i,:)/sum(averageParticleDiff));
         particleWeight(i,:) = (1/sqrt(2*pi*sigma))*exp(-((averageParticleDiff(i,:)^2)/2*sigma^2));
     end
-    
-    %pProb = particleProb(:,:)
-    pWeight = particleWeight(1,:)
-    
+        
     normalWeight = zeros(num, 1);
     for i = 1:num
         normalWeight(i,:) = particleWeight(i,:)/sum(particleWeight);
@@ -100,7 +91,12 @@ while(converged == 0 && n < maxNumOfIterations) %%particle filter loop
     
     %% Write code for resampling your particles
     
+    cdfWeight = cumsum(normalWeight);
+    %newParticles(num,1) = BotSim;
+    %particles(i) = BotSim(modifiedMap);
     
+    randomSamples = rand(1, num);
+    newParticles = interp1(cdfWeight, particles, randomSamples);
     
     %% Write code to check for convergence   
 	
