@@ -31,14 +31,14 @@ for i = 1:gridPoints(2)
     end
 end
 
-mapGrid = flipud(mapMatrix)
+mapGrid = flipud(mapMatrix);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %botSim = BotSim(map);  %sets up a botSim object a map, and debug mode on.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %generate some random particles inside the map
-num = 300; % number of particles
+num = 10; % number of particles
 particles(num,1) = BotSim; %how to set up a vector of objects
 for i = 1:num
     particles(i) = BotSim(modifiedMap);  %each particle should use the same map as the botSim object
@@ -58,25 +58,45 @@ while(converged == 0 && n < maxNumOfIterations) %%particle filter loop
     %% Write code for updating your particles scans
     
     %particleScans = cell(num, 1); %Creates a cell matrix to contain each particle's scans
+    particleScans = zeros(num, 6);
     for i = 1:num
         particleScans(i,:) = particles(i).ultraScan();
     end
     
     %% Write code for scoring your particles    
     
+    particleDiff = zeros(num,6);
+    averageParticleDiff = zeros(num,1);
     for i = 1:num
         particleDiff(i,:) = abs(botScan - particleScans(i,:)); %Calculates the absolute difference between particle and bot scans
         averageParticleDiff(i,:) = sum(particleDiff(i,:))/6; %Average difference between scans of bot and particle
     end
     
+    pDiff = particleDiff(1,:)
+    apDiff = averageParticleDiff(1,:)
+        
+    particleProb = zeros(num, 1);
+    particleWeight = zeros(num, 1);
     sigma = 1;
     
     for i = 1:num
         particleProb(i,:) = 1 - (averageParticleDiff(i,:)/sum(averageParticleDiff));
-        particleWeight(i,:) = (1/sqrt(2*pi*sigma))*exp(-((particleProb(i,:)^2)/2*sigma^2))
+        particleWeight(i,:) = (1/sqrt(2*pi*sigma))*exp(-((particleProb(i,:)^2)/2*sigma^2));
     end
     
+    pProb = particleProb(:,:)
+    pWeight = particleWeight(1,:)
     
+    normalWeight = zeros(num, 1);
+    for i = 1:num
+        normalWeight(i,:) = particleWeight(i,:)/sum(particleWeight);
+    end
+    
+    for i = 1:num
+        if normalWeight(i,:) > 1/num
+            nWeight = normalWeight(1,:)
+        end
+    end
     
     %% Write code for resampling your particles
     
@@ -91,7 +111,7 @@ while(converged == 0 && n < maxNumOfIterations) %%particle filter loop
     %% Write code to decide how to move next
     % here they just turn in cicles as an example
     turn = 0.5;
-    move = 1;
+    move = 5;
     botSim.turn(turn); %turn the real robot.  
     botSim.move(move); %move the real robot. These movements are recorded for marking 
     for i =1:num %for all the particles. 
