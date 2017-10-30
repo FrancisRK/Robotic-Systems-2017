@@ -38,7 +38,7 @@ mapGrid = flipud(mapMatrix);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %generate some random particles inside the map
-num = 5; % number of particles
+num = 300; % number of particles
 particles(num,1) = BotSim; %how to set up a vector of objects
 for i = 1:num
     particles(i) = BotSim(modifiedMap);  %each particle should use the same map as the botSim object
@@ -92,16 +92,33 @@ while(converged == 0 && n < maxNumOfIterations) %%particle filter loop
     %% Write code for resampling your particles
     
     cdfWeight = cumsum(normalWeight);
-    %newParticles(num,1) = BotSim;
+    newParticles(num,1) = BotSim;
     %particles(i) = BotSim(modifiedMap);
     
-    randomSamples = rand(1, num);
-    newParticles = interp1(cdfWeight, particles, randomSamples);
+    randomSample = rand(1, num);
     
+    x = 0;
+    y = cdfWeight(1);
+    for i = 1:num %This loop iterates over each entry of randomSample
+        for j = 1:num %This loop iterates over each area (entry) of cdfWeight
+            if x <= randomSample(i) < y
+                newParticles(i) = particles(j);
+                break;
+            else
+                x = cdfWeight(j);
+                y = cdfWeight(j+1);
+            end
+        end
+        x = 0;
+        y = cdfWeight(1);
+    end
+        
     %% Write code to check for convergence   
 	
-
+    
+    
     %% Write code to take a percentage of your particles and respawn in randomised locations (important for robustness)	
+    
     
     
     %% Write code to decide how to move next
