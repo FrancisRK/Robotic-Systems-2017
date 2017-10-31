@@ -11,7 +11,7 @@ botSim.setMap(modifiedMap);
 limsMin = min(map); % minimum limits of the map
 limsMax = max(map); % maximum limits of the map
 dims = limsMax-limsMin; %dimension of the map
-res = 10; %sampling resouloution in cm
+res = 5; %sampling resouloution in cm
 iterators = dims/res;
 iterators = ceil(iterators)+[1 1]; %to counteract 1 based indexing
 gridPoints = iterators + [1,1];
@@ -37,7 +37,7 @@ mapGrid = flipud(mapMatrix);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %generate some random particles inside the map
-num = 250; % number of particles
+num = 300; % number of particles
 particles(num,1) = BotSim; %how to set up a vector of objects
 for i = 1:num
     particles(i) = BotSim(modifiedMap);  %each particle should use the same map as the botSim object
@@ -157,22 +157,22 @@ while(converged == 0 && n < maxNumOfIterations) %%particle filter loop
         euclidDist(i) = (posDiff(i,1))^2 + (posDiff(i,2))^2;
     end
     
-    currentConverge = sum(euclidDist)/num
+    currentConverge = sum(euclidDist)/num;
     
     convergeConst = 70;
     
-    if sum(euclidDist)/num < convergeConst
+    if currentConverge < convergeConst
         a = "Yay, convergance!"
         converged = 1;
         n
         averagePos
-        botSim.getBotPos
+        botPos = botSim.getBotPos
     end
     
     if currentConverge < 140
         sd = 1
     elseif currentConverge < 200
-        sd = 2
+        sd = 3
     elseif currentConverge < 400
         sd = 5
     end    
@@ -184,7 +184,24 @@ while(converged == 0 && n < maxNumOfIterations) %%particle filter loop
     end
     
     %% Write code to decide how to move next
-    % here they just turn in cicles as an example
+    
+    % A* algorithm
+    if converged == 1
+        a = "A* time"
+        closedSet = [];
+        openSet = [averagePos];
+        hValues = mapMatrix
+    end
+    
+    if n == 30 && currentConverge >= 400
+        [maxDist, direc] = max(botScan); %returns longest distance scan line and index in array
+        turn = ((direc-1)/6)*(2*pi);
+        move = (0.65 + 0.1*randn)*maxDist;
+        botSim.turn(turn);
+        botSim.move(move);
+    end
+        
+    % here they just turn in circles as an example
     turn = pi/4;
     move = 2;
     botSim.turn(turn); %turn the real robot.  
@@ -204,8 +221,8 @@ while(converged == 0 && n < maxNumOfIterations) %%particle filter loop
         botSim.drawMap(); %drawMap() turns hold back on again, so you can draw the bots
         botSim.drawScanConfig(); %draws current scan configuration
         botSim.drawBot(30,'r'); %draw robot with line length 30 and green
-        [distances, crossingPoints] = botSim.ultraScan(); %get a scan from the real robot.
-        scatter(crossingPoints(:,1),crossingPoints(:,2),'marker','o','lineWidth',3); %draws crossingpoints
+        %[distances, crossingPoints] = botSim.ultraScan(); %get a scan from the real robot.
+        %scatter(crossingPoints(:,1),crossingPoints(:,2),'marker','o','lineWidth',3); %draws crossingpoints
         for i =1:num
             particles(i).drawBot(3); %draw particle with line length 3 and default color
         end
