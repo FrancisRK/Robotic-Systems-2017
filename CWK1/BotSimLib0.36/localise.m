@@ -4,7 +4,6 @@ function [botSim] = localise(botSim,map,target)
 
 %% setup code
 %you can modify the map to take account of your robots configuration space
-map = [0,0;60,0;60,45;45,45;45,59;106,59;106,105;0,105];  %default map
 modifiedMap = map; %you need to do this modification yourself
 botSim.setMap(modifiedMap);
 
@@ -38,7 +37,7 @@ mapGrid = flipud(mapMatrix);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %generate some random particles inside the map
-num = 300; % number of particles
+num = 250; % number of particles
 particles(num,1) = BotSim; %how to set up a vector of objects
 for i = 1:num
     particles(i) = BotSim(modifiedMap);  %each particle should use the same map as the botSim object
@@ -48,9 +47,10 @@ end
 
 botSim.drawMap();
 %% Localisation code
-maxNumOfIterations = 30;
+maxNumOfIterations = 100;
 n = 0;
 converged = 0; %The filter has not converged yet
+currentConverge = inf;
 while(converged == 0 && n < maxNumOfIterations) %%particle filter loop
     n = n+1; %increment the current number of iterations
     botScan(1,:) = botSim.ultraScan(); %get a scan from the real robot.
@@ -69,67 +69,132 @@ while(converged == 0 && n < maxNumOfIterations) %%particle filter loop
     averageParticleDiff = zeros(num,1);
     for i = 1:num
         particleDiff(i,:) = abs(botScan - particleScans(i,:)); %Calculates the absolute difference between particle and bot scans
-        averageParticleDiff(i,:) = sum(particleDiff(i,:))/6; %Average difference between scans of bot and particle
+        averageParticleDiff(i) = sum(particleDiff(i,:))/6; %Average difference between scans of bot and particle
     end
-        
+    
+    averageParticleDiff;
+    
     particleWeight = zeros(num, 1);
-    sigma = 1;
+    sd = 6;
+    damp = 0.02;
+    
+    particleWeight = normpdf(averageParticleDiff, 0, sd) + damp;
+    
+    %{
     for i = 1:num
-        particleWeight(i,:) = (1/sqrt(2*pi*sigma))*exp(-((averageParticleDiff(i,:)^2)/2*sigma^2));
+        %particleWeight(i) = (exp(-((averageParticleDiff(i)^2)/(sd^2)))) + damp;
     end
+    %}
+    particleWeight;
         
     normalWeight = zeros(num, 1);
     for i = 1:num
-        normalWeight(i,:) = particleWeight(i,:)/sum(particleWeight);
+        normalWeight(i) = particleWeight(i)/sum(particleWeight);
     end
     
+    normalWeight;
+    
+    %{
     for i = 1:num
-        if normalWeight(i,:) > 1/num
-            nWeight = normalWeight(1,:)
+        if normalWeight(i) > 1/num
+            nWeight = normalWeight(1)
         end
     end
+    %}
     
     %% Write code for resampling your particles
     
     cdfWeight = cumsum(normalWeight);
-    newParticles(num,1) = BotSim;
+    %newParticles(num,1) = BotSim;
     %particles(i) = BotSim(modifiedMap);
     
     randomSample = rand(1, num);
     
-    x = 0;
-    y = cdfWeight(1);
     for i = 1:num %This loop iterates over each entry of randomSample
+        x = 0;
+        y = cdfWeight(1);
         for j = 1:num %This loop iterates over each area (entry) of cdfWeight
-            if x <= randomSample(i) < y
-                newParticles(i) = particles(j);
+            if x <= randomSample(i) && randomSample(i) < y
+                %newParticles(i) = particles(j);
+                %if currentConverge >= 200
+                    newPos(i,:) = particles(j).getBotPos() + 0.4*(randn(1,2));
+                    newAng(i) = particles(j).getBotAng() + 0.1*randn();
+                %elseif currentConverge <= 200
+                %    newPos(i,:) = particles(j).getBotPos() + 0.1*(randn(1,2));
+                %    newAng(i) = particles(j).getBotAng() + 0.1*randn();
+                %end
                 break;
             else
                 x = cdfWeight(j);
                 y = cdfWeight(j+1);
             end
         end
-        x = 0;
-        y = cdfWeight(1);
     end
-        
+    
+    for i = 1:num
+        particles(i).setBotPos(newPos(i,:));
+        particles(i).setBotAng(newAng(i));
+    end
+    
     %% Write code to check for convergence   
 	
+    particlePos = zeros(num,2);
+    particleAng = zeros(num,2);
     
+    for i = 1:num
+        particlePos(i,:) = particles(i).getBotPos();
+        particleAng(i) = particles(i).getBotAng();
+    end
+    
+    averagePos = (sum(particlePos)/num);
+    averageAng = (sum(particleAng)/num);
+    
+    posDiff = zeros(num,2);
+    euclidDist = zeros(num,1);
+    
+    for i = 1:num
+        posDiff(i,:) = averagePos - particlePos(i,:);
+        euclidDist(i) = (posDiff(i,1))^2 + (posDiff(i,2))^2;
+    end
+    
+    currentConverge = sum(euclidDist)/num
+    
+    convergeConst = 70;
+    
+    if sum(euclidDist)/num < convergeConst
+        a = "Yay, convergance!"
+        converged = 1;
+        n
+        averagePos
+        botSim.getBotPos
+    end
+    
+    if currentConverge < 140
+        sd = 1
+    elseif currentConverge < 200
+        sd = 2
+    elseif currentConverge < 400
+        sd = 5
+    end    
     
     %% Write code to take a percentage of your particles and respawn in randomised locations (important for robustness)	
     
-    
+    for i = 1:(num*0.05)
+        particles(i).randomPose(5);
+    end
     
     %% Write code to decide how to move next
     % here they just turn in cicles as an example
-    turn = 0.5;
+    turn = pi/4;
     move = 2;
     botSim.turn(turn); %turn the real robot.  
     botSim.move(move); %move the real robot. These movements are recorded for marking 
     for i = 1:num %for all the particles. 
         particles(i).turn(turn); %turn the particle in the same way as the real robot
         particles(i).move(move); %move the particle in the same way as the real robot
+        if particles(i).insideMap == 0
+            particles(i).randomPose(5);
+        end
     end
     
     %% Drawing
@@ -137,8 +202,8 @@ while(converged == 0 && n < maxNumOfIterations) %%particle filter loop
     if botSim.debug()
         hold off; %the drawMap() function will clear the drawing when hold is off
         botSim.drawMap(); %drawMap() turns hold back on again, so you can draw the bots
-        botSim.drawBot(30,'g'); %draw robot with line length 30 and green
         botSim.drawScanConfig(); %draws current scan configuration
+        botSim.drawBot(30,'r'); %draw robot with line length 30 and green
         [distances, crossingPoints] = botSim.ultraScan(); %get a scan from the real robot.
         scatter(crossingPoints(:,1),crossingPoints(:,2),'marker','o','lineWidth',3); %draws crossingpoints
         for i =1:num
