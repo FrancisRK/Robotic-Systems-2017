@@ -13,7 +13,7 @@ limsMax = max(map); % maximum limits of the map
 dims = limsMax-limsMin; %dimension of the map
 res = 5; %sampling resouloution in cm
 iterators = dims/res;
-iterators = ceil(iterators)+[1 1]; %to counteract 1 based indexing
+iterators = ceil(iterators) + [1 1]; %to counteract 1 based indexing
 gridPoints = iterators + [1,1];
 mapMatrix = zeros(gridPoints);
 for i = 1:gridPoints(2)
@@ -36,11 +36,15 @@ mapGrid = flipud(mapMatrix);
 %botSim = BotSim(map);  %sets up a botSim object a map, and debug mode on.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%sets number of scan lines
+numScanLines = 20;
+
 %generate some random particles inside the map
 num = 300; % number of particles
 particles(num,1) = BotSim; %how to set up a vector of objects
 for i = 1:num
     particles(i) = BotSim(modifiedMap);  %each particle should use the same map as the botSim object
+    particles(i).setScanConfig(particles(i).generateScanConfig(numScanLines));
     particles(i).randomPose(5); %spawn the particles in random locations
     particles(i).drawBot(3);
 end
@@ -51,6 +55,7 @@ maxNumOfIterations = 100;
 n = 0;
 converged = 0; %The filter has not converged yet
 currentConverge = inf;
+botSim.setScanConfig(botSim.generateScanConfig(numScanLines));
 while(converged == 0 && n < maxNumOfIterations) %%particle filter loop
     n = n+1; %increment the current number of iterations
     botScan(1,:) = botSim.ultraScan(); %get a scan from the real robot.
@@ -58,33 +63,34 @@ while(converged == 0 && n < maxNumOfIterations) %%particle filter loop
     %% Write code for updating your particles scans
     
     %particleScans = cell(num, 1); %Creates a cell matrix to contain each particle's scans
-    particleScans = zeros(num, 6);
+    particleScans = zeros(num, numScanLines);
     for i = 1:num
         particleScans(i,:) = particles(i).ultraScan();
     end
     
     %% Write code for scoring your particles    
     
-    particleDiff = zeros(num,6);
+    particleDiff = zeros(num,numScanLines);
     averageParticleDiff = zeros(num,1);
     for i = 1:num
         particleDiff(i,:) = abs(botScan - particleScans(i,:)); %Calculates the absolute difference between particle and bot scans
-        averageParticleDiff(i) = sum(particleDiff(i,:))/6; %Average difference between scans of bot and particle
+        averageParticleDiff(i) = sum(particleDiff(i,:))/numScanLines; %Average difference between scans of bot and particle
     end
     
     averageParticleDiff;
     
     particleWeight = zeros(num, 1);
     sd = 6;
-    damp = 0.02;
+    damp = 0.01;
     
     particleWeight = normpdf(averageParticleDiff, 0, sd) + damp;
     
     %{
     for i = 1:num
-        %particleWeight(i) = (exp(-((averageParticleDiff(i)^2)/(sd^2)))) + damp;
+        particleWeight(i) = (exp(-((averageParticleDiff(i)^2)/(sd^2)))) + damp;
     end
     %}
+    
     particleWeight;
         
     normalWeight = zeros(num, 1);
@@ -162,7 +168,7 @@ while(converged == 0 && n < maxNumOfIterations) %%particle filter loop
     convergeConst = 70;
     
     if currentConverge < convergeConst
-        a = "Yay, convergance!"
+        a = 'Yay, convergance'
         converged = 1;
         n
         averagePos
@@ -170,7 +176,7 @@ while(converged == 0 && n < maxNumOfIterations) %%particle filter loop
     end
     
     if currentConverge < 140
-        sd = 1
+        sd = 2
     elseif currentConverge < 200
         sd = 3
     elseif currentConverge < 400
@@ -187,21 +193,26 @@ while(converged == 0 && n < maxNumOfIterations) %%particle filter loop
     
     % A* algorithm
     if converged == 1
-        a = "A* time"
-        closedSet = [];
-        openSet = [averagePos];
-        hValues = mapMatrix
+        %closedSet = [];
+        %openSet = [averagePos];
+        %hValues = mapMatrix;
+        %gridNode = cell(size(mapMatrix));
     end
     
-    %{
-    if n == 10 && currentConverge >= 400
+    if converged == 0
         [maxDist, direc] = max(botScan); %returns longest distance scan line and index in array
-        turn = ((direc-1)/6)*(2*pi);
-        move = (0.75 + 0.2*randn)*maxDist;
+        turn = ((direc-1)/numScanLines)*(2*pi);
+        move = 0.1*maxDist;
         botSim.turn(turn);
         botSim.move(move);
+        for i = 1:num
+            particles(i).turn(turn);
+            particles(i).move(move);
+            if particles(i).insideMap == 0
+                particles(i).randomPose(5);
+            end
+        end
     end
-    %}
     
     % here they just turn in circles as an example
     turn = pi/4;
@@ -223,12 +234,40 @@ while(converged == 0 && n < maxNumOfIterations) %%particle filter loop
         botSim.drawMap(); %drawMap() turns hold back on again, so you can draw the bots
         botSim.drawScanConfig(); %draws current scan configuration
         botSim.drawBot(30,'r'); %draw robot with line length 30 and green
-        [distances, crossingPoints] = botSim.ultraScan(); %get a scan from the real robot.
-        scatter(crossingPoints(:,1),crossingPoints(:,2),'marker','o','lineWidth',3); %draws crossingpoints
-        for i =1:num
-            particles(i).drawBot(3); %draw particle with line length 3 and default color
+        %[distances, crossingPoints] = botSim.ultraScan(); %get a scan from the real robot.
+        %scatter(crossingPoints(:,1),crossingPoints(:,2),'marker','o','lineWidth',3); %draws crossingpoints
+        particlePos = zeros(num,2);
+        for i = 1:num
+            particlePos(i,:) = particles(i).getBotPos();
         end
+        scatter(particlePos(:,1),particlePos(:,2),'bo');
+        %for i =1:num   
+        %    particles(i).drawBot(3); %draw particle with line length 3 and default color
+        %end
         drawnow;
     end
 end
+
+function [gridNodes, goalNode] = initialiseNodes(map, goal)
+    limsMin = min(map); % minimum limits of the map
+    limsMax = max(map); % maximum limits of the map
+    dims = limsMax-limsMin; %dimension of the map
+    res = 5; %sampling resouloution in cm
+    iterators = dims/res;
+    iterators = ceil(iterators) + [1 1]; %to counteract 1 based indexing
+    gridPoints = iterators + [1,1];
+    mapMatrix = zeros(gridPoints);
+    gridNodes = cell(size(mapMatrix));
+    for i = 1:gridPoints(2)
+        for j = 1:gridPoints(1)
+            pos = limsMin(1) + [j-1 i-1]*res;
+            gValue = inf;
+            hValue = sqrt((pos(1) - goal(1))^2 + (pos(2) - goal(2))^2);
+            xParent = 0;
+            yParent = 0;
+            gridNodes(i,j) = [pos(1);pos(2);gValue;hValue;xParent;yParent];
+        end
+    end
+end
+
 end
